@@ -1,4 +1,4 @@
-# ArchLinux-Learning
+# Linux-memo
 Arch Linux learning notes ( Arch Wiki: https://archlinux.org/ )
 
 1. okular pdf注解：F6 https://docs.kde.org/stable5/en/okular/okular/annotations.html
