@@ -1,0 +1,31 @@
+Incremental update
+
+1. git status --porcelain (should output nothing)
+2. incremental update packages: https://cdn.kernel.org/pub/linux/kernel/v6.x/incr/ (For stable/Lts, 跨多个版时，增量补丁按顺序打) 
+				rc -- https://git.kernel.org/torvalds/p/v7.3-rc3/v7.3-rc2 （7.3-rc2 -> 7.3-rc3)
+3. 打补丁：1️⃣ stable/lts 增量补丁（xz压缩格式）-- xzcat /tmp/p-$step.xz | patch -p1 --forward （在内核source目录中执行）。
+	2️⃣ rc -- curl -fL -o /tmp/rc2-rc3.patch "https://git.kernel.org/torvalds/p/v7.3-rc3/v7.3-rc2" （网页保存为patch文件）// patch -p1 --forward < /tmp/rc2-rc3.patch
+
+4. find . -name '*.orig' -print -delete
+   find . -name '*.rej'  -print
+   确认版本：make -s kernelversion  
+
+5. 提交更新到remote：
+   git add -A
+   git commit -m "..."
+   git log --oneline -2
+   git push
+
+6. 验证
+LOCAL=$(git rev-parse HEAD)
+REMOTE=$(git ls-remote origin refs/heads/fedora-lts | cut -f1)
+echo "local =$LOCAL"; echo "remote=$REMOTE"
+[ "$LOCAL" = "$REMOTE" ] && echo "✅ 确认推上去了" || echo "❌ 没推上去"
+
+7. 取得新hash：
+   修改kernel.nix中对应的版本号、rev，hash随便修改一个。保存跑一次nixos-rebuild build，在报错中找到正确的hash，填回kernel.nix
+error: hash mismatch in fixed-output derivation '/nix/store/faxykv7qm27lld47cdf7bqi9hxkwlcpf-sm8150-linux-eec1c5a.drv':
+         specified: sha256-fuVveeOnBmYHbrygEzigSAuBptRxRX+xjwqlYhC+O1Q=
+            got:    sha256-Oj3KrggNURxoCdFH4qpE/XoJxx+yjdzeVHkJAtiH8Fg= ( -- 正确的hash）
+
+8. 构建：sudo nixos-rebuild build --build-host pibuild --print-build-logs
